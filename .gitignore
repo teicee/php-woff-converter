@@ -1,3 +1,7 @@
-/vendor/
+vendor
 composer.lock
+composer.phar
 *.diff
+.DS_Store
+.idea
+.project
