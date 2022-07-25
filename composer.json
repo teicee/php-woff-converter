@@ -1,0 +1,27 @@
+{
+    "name":         "teicee/woff-converter",
+    "type":         "library",
+    "description":  "PHP class to convert a WOFF font file into a TTF/OTF font file",
+    "keywords":     [ "teicee", "tic", "woff", "ttf", "font", "converter" ],
+    "homepage":     "https://github.com/teicee/php-woff-converter",
+    "license":      "LGPL-2.1",
+    "authors": [
+        {
+            "name":     "téïcée team",
+            "homepage": "https://www.teicee.com/"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "TIC\\Fonts\\":     "src/"
+        }
+    },
+    "require": {
+        "php":                  "^7.0|^8.0"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main":         "1.x-dev"
+        }
+    }
+}

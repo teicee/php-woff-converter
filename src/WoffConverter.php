@@ -315,7 +315,7 @@ class WoffConverter
 	 * @param   string      $ttfFile    Path for the generated file
 	 * @return  int                     Total bytes written
 	 */
-	public static function WOFFtoTTF(string $woffFile, ?string $ttfFile = null): int
+	public static function WOFFtoTTF(string $woffFile, string $ttfFile = null): int
 	{
 		if (null === $ttfFile) $ttfFile = \sprintf('%s/%s.ttf', \dirname($woffFile), \basename($woffFile, '.woff'));
 		
