@@ -13,15 +13,15 @@
     ],
     "autoload": {
         "psr-4": {
-            "TIC\\Fonts\\":     "src/"
+            "TIC\\WoffConverter\\":     "src/"
         }
     },
     "require": {
-        "php":                  "^7.0|^8.0"
+        "php":                          "^7.0|^8.0"
     },
     "extra": {
         "branch-alias": {
-            "dev-main":         "1.x-dev"
+            "dev-main":                 "1.x-dev"
         }
     }
 }

@@ -7,12 +7,12 @@
  * @license     http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @package     teicee/woff-converter
  */
-namespace TIC\Fonts;
+namespace TIC\WoffConverter;
 
 /**
  * Utility class to convert font file from WOFF to TTF.
  */
-class WoffConverter
+class Woff
 {
 	/**
 	 * @var     boolean     True to enable debug informations on stdout.
@@ -39,7 +39,7 @@ class WoffConverter
 	);
 	const WOFF_HeaderSize   = 44;
 	const TTF_HeaderSize    = 12;
-	
+
 	/**
 	 * @const   array       Entries name & format from a WOFF table directory.
 	 */
@@ -52,8 +52,8 @@ class WoffConverter
 	);
 	const WOFF_TableDirSize = 20;
 	const TTF_TableDirSize  = 16;
-	
-	
+
+
 	/**
 	 * Display debug message.
 	 *
@@ -95,7 +95,7 @@ class WoffConverter
 		$header = \unpack(\implode('/', $format), \fread($fh, self::WOFF_HeaderSize));
 		if (self::$debug) self::debug("WOFF Header", $header);
 		
-		if ($header['signature'] !== 0x774F4646)
+		if ($header['signature'] !== 0x774F4646)  // wOFF
 			self::error(__METHOD__, "Bad signature: input file is not a valid WOFF font");
 		
 		if ($header['reserved'] !== 0)
@@ -104,8 +104,9 @@ class WoffConverter
 		switch ($header['flavor']) {
 			case 0x00010000: $header['type'] = 'ttf'; break;
 			case 0x4F54544F: $header['type'] = 'cff'; break;
-			default:         $header['type'] = 'otf'; break;
+			default:         $header['type'] = 'xxx'; break;
 		}
+		if (self::$debug) self::debug("WOFF Flavor", $header['type']);
 		
 		return $header;
 	}
@@ -181,7 +182,7 @@ class WoffConverter
 
 	/**
 	 * Read all data and informations from a WOFF file.
-	 * @see https://www.w3.org/Submission/WOFF/
+	 * @see https://www.w3.org/TR/WOFF/
 	 *
 	 * @param   string      $path       Path for the input file
 	 * @return  array                   Font data (with keys 'headers', 'entries' & 'fontTbl')
@@ -238,8 +239,6 @@ class WoffConverter
 		if ($c === self::TTF_HeaderSize) return $c;
 		self::error(__METHOD__, "TTF output error: wrong header length ($c)");
 	}
-
-
 
 	/**
 	 * Write the table directory to a TTF file.
@@ -327,7 +326,7 @@ class WoffConverter
 	 * @param   string      $ttfFile    Path for the generated file
 	 * @return  int                     Total bytes written
 	 */
-	public static function WOFFtoTTF(string $woffFile, string $ttfFile = null): int
+	public static function toTTF(string $woffFile, string $ttfFile = null): int
 	{
 		if (null === $ttfFile) $ttfFile = \sprintf('%s/%s.ttf', \dirname($woffFile), \basename($woffFile, '.woff'));
 		

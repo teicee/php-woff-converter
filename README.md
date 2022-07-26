@@ -55,17 +55,17 @@ require 'vendor/autoload.php';
 
 Alternatively, if you're not using Composer, you can
 [download WoffConverter as a zip file](https://github.com/teicee/php-woff-converter/archive/main.zip),
-then copy the `src/WoffConverter.php` file into one of the `include_path` directories specified in your PHP configuration.
+then copy the `src/Woff.php` file into one of the `include_path` directories specified in your PHP configuration.
 
 Or you can also download only the PHP class file, directly from the project repository:
 ```sh
-curl https://raw.githubusercontent.com/teicee/php-woff-converter/main/src/WoffConverter.php
+curl https://raw.githubusercontent.com/teicee/php-woff-converter/main/src/Woff.php
 ```
 
 Then you have to load the class file manually in your code:
 ```php
 <?php
-require 'path/to/src/WoffConverter.php';
+require 'path/to/src/Woff.php';
 ```
 
 
@@ -76,10 +76,10 @@ Usage
 
 Just pass the path your WOFF file and the corresponding TTF file will be generated:
 ```php
-use TIC\Fonts\WoffConverter;
+use TIC\WoffConverter\Woff;
 
 // Convert a WOFF file in TTF...
-WoffConverter::WOFFtoTTF("path/to/fonts/foobar.woff");
+Woff::toTTF("path/to/fonts/foobar.woff");
 ```
 
 **Note:** You can specify the output TTF file in the 2nd optional argument.
@@ -91,7 +91,7 @@ By default it's derived from the input by replacing the extension `.woff` by `.t
 No settings, just a public boolean property if you need debug informations:
 ```php
 // Enable debug on stdout
-WoffConverter::$debug = true;
+Woff::$debug = true;
 ```
 
 With this debug option, intermediate data will be displayed on stdout.
