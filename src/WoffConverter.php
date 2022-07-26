@@ -5,13 +5,12 @@
  * @see         https://github.com/teicee/php-woff-converter
  * @author      Grégory Marigot (téïcée) <gmarigot@teicee.com> (@proxyconcept)
  * @license     http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
+ * @package     teicee/woff-converter
  */
 namespace TIC\Fonts;
 
 /**
  * Utility class to convert font file from WOFF to TTF.
- *
- * @see https://www.w3.org/Submission/WOFF/
  */
 class WoffConverter
 {
@@ -21,9 +20,9 @@ class WoffConverter
 	public static $debug = false;
 
 	/**
-	 * @var     array       Entries name & format from a WOFF header.
+	 * @const   array       Entries name & format from a WOFF header.
 	 */
-	protected static $WOFFHeader = array(
+	const WOFF_Header = array(
 		'signature'       => "N",  // 0x774F4646 'wOFF'
 		'flavor'          => "N",  // The "sfnt version" of the original file: 0x00010000 for TrueType flavored fonts or 0x4F54544F 'OTTO' for CFF flavored fonts.
 		'length'          => "N",  // Total size of the WOFF file.
@@ -38,23 +37,23 @@ class WoffConverter
 		'privOffset'      => "N",  // Offset to protected data block, from beginning of WOFF file; zero if no protected data block is present.
 		'privLength'      => "N",  // Length of protected data block; zero if no protected data block is present.
 	);
-	const HeaderSizeWOFF   = 44;
-	const HeaderSizeTTF    = 12;
-
+	const WOFF_HeaderSize   = 44;
+	const TTF_HeaderSize    = 12;
+	
 	/**
-	 * @var     array       Entries name & format from a WOFF table directory.
+	 * @const   array       Entries name & format from a WOFF table directory.
 	 */
-	protected static $WOFFTableDirEntry = array(
+	const WOFF_TableDirEntry = array(
 		'tag'             => "N",  // 4-byte sfnt table identifier.
 		'offset'          => "N",  // Offset to the data, from beginning of WOFF file.
 		'compLength'      => "N",  // Length of the compressed data, excluding padding.
 		'origLength'      => "N",  // Length of the uncompressed table, excluding padding.
 		'origChecksum'    => "N",  // Checksum of the uncompressed table.
 	);
-	const TableDirSizeWOFF = 20;
-	const TableDirSizeTTF  = 16;
-
-
+	const WOFF_TableDirSize = 20;
+	const TTF_TableDirSize  = 16;
+	
+	
 	/**
 	 * Display debug message.
 	 *
@@ -91,9 +90,9 @@ class WoffConverter
 	protected static function woffReadHeader($fh): array
 	{
 		$format = array();
-		foreach (self::$WOFFHeader as $name => $code) $format[] = $code . $name;
+		foreach (self::WOFF_Header as $name => $code) $format[] = $code . $name;
 		
-		$header = \unpack(\implode('/', $format), \fread($fh, self::HeaderSizeWOFF));
+		$header = \unpack(\implode('/', $format), \fread($fh, self::WOFF_HeaderSize));
 		if (self::$debug) self::debug("WOFF Header", $header);
 		
 		if ($header['signature'] !== 0x774F4646)
@@ -121,11 +120,11 @@ class WoffConverter
 	protected static function woffReadTableDir($fh, int $numTables): array
 	{
 		$format = array();
-		foreach (self::$WOFFTableDirEntry as $name => $code) $format[] = $code . $name;
+		foreach (self::WOFF_TableDirEntry as $name => $code) $format[] = $code . $name;
 		
 		$entries = array();
 		for ($n = 0; $n < $numTables; $n++) {
-			$entries[] = \unpack(\implode('/', $format), \fread($fh, self::TableDirSizeWOFF));
+			$entries[] = \unpack(\implode('/', $format), \fread($fh, self::WOFF_TableDirSize));
 		}
 		
 		if (self::$debug) self::debug("WOFF Table directory", $entries);
@@ -182,6 +181,7 @@ class WoffConverter
 
 	/**
 	 * Read all data and informations from a WOFF file.
+	 * @see https://www.w3.org/Submission/WOFF/
 	 *
 	 * @param   string      $path       Path for the input file
 	 * @return  array                   Font data (with keys 'headers', 'entries' & 'fontTbl')
@@ -218,18 +218,28 @@ class WoffConverter
 	 */
 	protected static function ttfWriteHeader($fh, array $headers): int
 	{
-		$searchRange = 16 * \strlen(\decbin($headers['numTables'])); // 16 * maxPower2
+		$entrySelector = \floor(\log($headers['numTables'], 2));
+		$searchRange   = \pow(2, $entrySelector) * 16;
+		$rangeShift    = $headers['numTables'] * 16 - $searchRange;
+		if (self::$debug) {
+			self::debug("TTF searchRange",   $searchRange);
+			self::debug("TTF entrySelector", $entrySelector);
+			self::debug("TTF rangeShift",    $rangeShift);
+		}
 		
-		$c = 0;
-		$c+= (int)\fwrite($fh, \pack('N', $headers['flavor']));
-		$c+= (int)\fwrite($fh, \pack('n', $headers['numTables']));
-		$c+= (int)\fwrite($fh, \pack('n', $searchRange));
-		$c+= (int)\fwrite($fh, \pack('n', \log($searchRange, 2)));
-		$c+= (int)\fwrite($fh, \pack('n', $headers['numTables'] * $searchRange));
+		$c = (int)\fwrite($fh, \pack('Nnnnn',
+			$headers['flavor'],
+			$headers['numTables'],
+			$searchRange,
+			$entrySelector,
+			$rangeShift
+		));
 		
-		if ($c === self::HeaderSizeTTF) return $c;
+		if ($c === self::TTF_HeaderSize) return $c;
 		self::error(__METHOD__, "TTF output error: wrong header length ($c)");
 	}
+
+
 
 	/**
 	 * Write the table directory to a TTF file.
@@ -240,20 +250,21 @@ class WoffConverter
 	 */
 	protected static function ttfWriteTableDir($fh, array $entries): int
 	{
-		$dataOffset = self::HeaderSizeTTF + self::TableDirSizeTTF * \count($entries);
+		$dataOffset = self::TTF_HeaderSize + self::TTF_TableDirSize * \count($entries);
 		
 		$c = 0;
 		foreach ($entries as $n => $entry) {
-			$c+= (int)\fwrite($fh, \pack('N', $entry['tag']));
-			$c+= (int)\fwrite($fh, \pack('N', $entry['origChecksum']));
-			$c+= (int)\fwrite($fh, \pack('N', $dataOffset));
-			$c+= (int)\fwrite($fh, \pack('N', $entry['dataLength']));
-			
+			$c+= (int)\fwrite($fh, \pack('NNNN',
+				$entry['tag'],
+				$entry['origChecksum'],
+				$dataOffset,
+				$entry['dataLength']
+			));
 			$mod4 = $entry['dataLength'] % 4;
 			$dataOffset+= $entry['dataLength'] + (($mod4) ? (4 - $mod4) : 0);
 		}
 		
-		if ($c === self::TableDirSizeTTF * \count($entries)) return $c;
+		if ($c === self::TTF_TableDirSize * \count($entries)) return $c;
 		self::error(__METHOD__, "TTF output error: wrong table directory length ($c)");
 	}
 
@@ -285,6 +296,7 @@ class WoffConverter
 
 	/**
 	 * Write all data and informations to a TTF file.
+	 * @see https://docs.microsoft.com/fr-fr/typography/opentype/spec/otff
 	 *
 	 * @param   string      $path       Path for the output file
 	 * @param   array       $font       Font data (with keys 'headers', 'entries' & 'fontTbl')

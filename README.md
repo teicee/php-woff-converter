@@ -19,7 +19,8 @@ However the TTF file format can still be useful, for example with PDF tools.
 - Import webfont in WOFF (Web Open Font Format) file format 1.0
   ([W3C specifications](https://www.w3.org/TR/WOFF/))
 - Export font data in TTF (TrueType Font) file format
-  ([Apple specifications](https://developer.apple.com/fonts/TrueType-Reference-Manual/))
+  ([Apple reference](https://developer.apple.com/fonts/TrueType-Reference-Manual/),
+   [Microsoft specifications](https://docs.microsoft.com/fr-fr/typography/opentype/spec/otff))
 - Full PHP library, only one file containing the static utility class is needed
 
 ### Requirements
